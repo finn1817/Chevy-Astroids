@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐹🔥 Chewy's Asteroid Adventure</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #000000 0%, #1a0033 100%);
+            color: #fff;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .game-container {
+            text-align: center;
+            max-width: 100%;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px #ff6600, 0 0 40px #ff6600;
+            letter-spacing: 3px;
+        }
+
+        .info-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: rgba(255, 150, 50, 0.1);
+            border: 2px solid #ff9933;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat {
+            font-size: 1.3em;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ff9933;
+        }
+
+        .stat span {
+            color: #ff9933;
+            font-size: 1.5em;
+        }
+
+        canvas {
+            border: 3px solid #ff9933;
+            background: radial-gradient(circle at center, #0a0a1a 0%, #000000 100%);
+            box-shadow: 0 0 30px rgba(255, 150, 50, 0.5),
+                        inset 0 0 100px rgba(100, 50, 0, 0.3);
+            border-radius: 10px;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .controls {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 150, 50, 0.1);
+            border: 2px solid #ff9933;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .controls h3 {
+            color: #ff9933;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .controls p {
+            margin: 5px 0;
+            font-size: 1em;
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 4px solid #ff0066;
+            border-radius: 15px;
+            padding: 40px 60px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(255, 0, 102, 0.8);
+            display: none;
+            z-index: 1000;
+        }
+
+        .game-over h2 {
+            font-size: 3em;
+            color: #ff0066;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px #ff0066;
+        }
+
+        .game-over p {
+            font-size: 1.5em;
+            margin: 10px 0;
+        }
+
+        .game-over button {
+            margin-top: 20px;
+            padding: 15px 40px;
+            font-size: 1.3em;
+            font-family: 'Courier New', monospace;
+            background: #ff9933;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .game-over button:hover {
+            background: #ff6600;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px #ff9933;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .info-panel {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .stat {
+                font-size: 1.1em;
+            }
+
+            .controls p {
+                font-size: 0.9em;
+            }
+
+            .game-over {
+                padding: 30px 40px;
+            }
+
+            .game-over h2 {
+                font-size: 2em;
+            }
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2em;
+            color: #ff9933;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">Loading Chewy... 🐹</div>
+    
+    <div class="game-container" style="display: none;" id="gameContent">
+        <h1>🐹 CHEWY'S ASTEROID ADVENTURE 🔥</h1>
+        
+        <div class="info-panel">
+            <div class="stat">SCORE: <span id="score">0</span></div>
+            <div class="stat">LIVES: <span id="lives">3</span></div>
+            <div class="stat">LEVEL: <span id="level">1</span></div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="controls">
+            <h3>⌨️ CONTROLS</h3>
+            <p>🔄 <strong>ARROW LEFT/RIGHT</strong> - Rotate Chewy</p>
+            <p>⬆️ <strong>ARROW UP</strong> - Boost Forward</p>
+            <p>🔥 <strong>SPACEBAR</strong> - Shoot Fireballs</p>
+        </div>
+
+        <div class="game-over" id="gameOver">
+            <h2>GAME OVER</h2>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <p>Level Reached: <span id="finalLevel">1</span></p>
+            <button onclick="restartGame()">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        // Load hamster image first
+        const hamsterImg = new Image();
+        hamsterImg.crossOrigin = "anonymous";
+        hamsterImg.src = "https://github.com/finn1817/Chevy-Astroids/blob/main/assets/Images/chewy.png?raw=true";
+        
+        hamsterImg.onload = function() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('gameContent').style.display = 'block';
+            initGame();
+        };
+
+        hamsterImg.onerror = function() {
+            document.getElementById('loading').textContent = 'Error loading hamster image 😢';
+        };
+
+        function initGame() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Set canvas size
+            const setCanvasSize = () => {
+                const maxWidth = Math.min(window.innerWidth - 40, 800);
+                const maxHeight = Math.min(window.innerHeight - 300, 600);
+                canvas.width = maxWidth;
+                canvas.height = maxHeight;
+            };
+            setCanvasSize();
+            window.addEventListener('resize', setCanvasSize);
+
+            // Game variables
+            let score = 0;
+            let lives = 3;
+            let level = 1;
+            let gameRunning = true;
+            let keys = {};
+
+            // Star background
+            const stars = [];
+            for (let i = 0; i < 100; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2
+                });
+            }
+
+            // Hamster class (replaces Ship)
+            class Hamster {
+                constructor() {
+                    this.reset();
+                }
+
+                reset() {
+                    this.x = canvas.width / 2;
+                    this.y = canvas.height / 2;
+                    this.angle = 0;
+                    this.rotation = 0;
+                    this.velocityX = 0;
+                    this.velocityY = 0;
+                    this.thrust = false;
+                    this.invulnerable = true;
+                    this.invulnerableTime = 120;
+                    this.size = 40; // Hamster size
+                }
+
+                update() {
+                    // Rotation
+                    if (keys['ArrowLeft']) this.rotation = -0.08;
+                    else if (keys['ArrowRight']) this.rotation = 0.08;
+                    else this.rotation = 0;
+
+                    this.angle += this.rotation;
+
+                    // Thrust
+                    this.thrust = keys['ArrowUp'];
+                    if (this.thrust) {
+                        this.velocityX += Math.cos(this.angle) * 0.15;
+                        this.velocityY += Math.sin(this.angle) * 0.15;
+                    }
+
+                    // Apply friction
+                    this.velocityX *= 0.99;
+                    this.velocityY *= 0.99;
+
+                    // Limit speed
+                    const maxSpeed = 8;
+                    const speed = Math.sqrt(this.velocityX ** 2 + this.velocityY ** 2);
+                    if (speed > maxSpeed) {
+                        this.velocityX = (this.velocityX / speed) * maxSpeed;
+                        this.velocityY = (this.velocityY / speed) * maxSpeed;
+                    }
+
+                    // Move
+                    this.x += this.velocityX;
+                    this.y += this.velocityY;
+
+                    // Screen wrapping
+                    if (this.x < -this.size) this.x = canvas.width + this.size;
+                    if (this.x > canvas.width + this.size) this.x = -this.size;
+                    if (this.y < -this.size) this.y = canvas.height + this.size;
+                    if (this.y > canvas.height + this.size) this.y = -this.size;
+
+                    // Update invulnerability
+                    if (this.invulnerable) {
+                        this.invulnerableTime--;
+                        if (this.invulnerableTime <= 0) {
+                            this.invulnerable = false;
+                        }
+                    }
+                }
+
+                draw() {
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate(this.angle);
+
+                    // Flashing effect when invulnerable
+                    if (this.invulnerable && Math.floor(Date.now() / 100) % 2 === 0) {
+                        ctx.restore();
+                        return;
+                    }
+
+                    // Draw hamster image
+                    ctx.drawImage(hamsterImg, -this.size, -this.size, this.size * 2, this.size * 2);
+
+                    // Draw thrust effect (sparkles behind hamster)
+                    if (this.thrust) {
+                        for (let i = 0; i < 3; i++) {
+                            ctx.fillStyle = `rgba(255, ${100 + Math.random() * 100}, 0, ${Math.random()})`;
+                            ctx.beginPath();
+                            ctx.arc(-this.size - Math.random() * 10, (Math.random() - 0.5) * 20, Math.random() * 4, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+
+                    ctx.restore();
+                }
+
+                getCollisionRadius() {
+                    return this.size * 0.6;
+                }
+
+                getMouthPosition() {
+                    // Calculate mouth position at the front of hamster
+                    return {
+                        x: this.x + Math.cos(this.angle) * this.size * 0.8,
+                        y: this.y + Math.sin(this.angle) * this.size * 0.8
+                    };
+                }
+            }
+
+            // Fireball class (replaces Bullet)
+            class Fireball {
+                constructor(x, y, angle) {
+                    this.x = x;
+                    this.y = y;
+                    this.angle = angle;
+                    this.velocityX = Math.cos(angle) * 10;
+                    this.velocityY = Math.sin(angle) * 10;
+                    this.life = 60;
+                    this.size = 8;
+                    this.particles = [];
+                }
+
+                update() {
+                    this.x += this.velocityX;
+                    this.y += this.velocityY;
+                    this.life--;
+
+                    // Create trailing fire particles
+                    if (Math.random() > 0.5) {
+                        this.particles.push({
+                            x: this.x,
+                            y: this.y,
+                            life: 15,
+                            size: Math.random() * 4 + 2
+                        });
+                    }
+
+                    // Update particles
+                    this.particles = this.particles.filter(p => {
+                        p.life--;
+                        return p.life > 0;
+                    });
+
+                    // Screen wrapping
+                    if (this.x < 0) this.x = canvas.width;
+                    if (this.x > canvas.width) this.x = 0;
+                    if (this.y < 0) this.y = canvas.height;
+                    if (this.y > canvas.height) this.y = 0;
+                }
+
+                draw() {
+                    // Draw trailing particles
+                    this.particles.forEach(p => {
+                        const alpha = p.life / 15;
+                        ctx.fillStyle = `rgba(255, ${100 + Math.random() * 100}, 0, ${alpha})`;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+
+                    // Draw main fireball
+                    const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+                    gradient.addColorStop(0, '#ffff00');
+                    gradient.addColorStop(0.4, '#ff6600');
+                    gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Inner glow
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size * 0.4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                isDead() {
+                    return this.life <= 0;
+                }
+            }
+
+            // Asteroid class
+            class Asteroid {
+                constructor(x, y, size) {
+                    this.x = x || Math.random() * canvas.width;
+                    this.y = y || Math.random() * canvas.height;
+                    this.size = size || 'large';
+                    
+                    const sizes = {
+                        large: { radius: 40, points: 100 },
+                        medium: { radius: 25, points: 50 },
+                        small: { radius: 15, points: 25 }
+                    };
+                    
+                    this.radius = sizes[this.size].radius;
+                    this.points = sizes[this.size].points;
+                    
+                    const speed = 1 + Math.random() * 2;
+                    const angle = Math.random() * Math.PI * 2;
+                    this.velocityX = Math.cos(angle) * speed;
+                    this.velocityY = Math.sin(angle) * speed;
+                    this.rotationSpeed = (Math.random() - 0.5) * 0.05;
+                    this.rotation = 0;
+
+                    this.vertices = [];
+                    const numVertices = 8 + Math.floor(Math.random() * 5);
+                    for (let i = 0; i < numVertices; i++) {
+                        const angle = (i / numVertices) * Math.PI * 2;
+                        const variance = 0.7 + Math.random() * 0.3;
+                        this.vertices.push({
+                            x: Math.cos(angle) * this.radius * variance,
+                            y: Math.sin(angle) * this.radius * variance
+                        });
+                    }
+                }
+
+                update() {
+                    this.x += this.velocityX;
+                    this.y += this.velocityY;
+                    this.rotation += this.rotationSpeed;
+
+                    if (this.x < -this.radius) this.x = canvas.width + this.radius;
+                    if (this.x > canvas.width + this.radius) this.x = -this.radius;
+                    if (this.y < -this.radius) this.y = canvas.height + this.radius;
+                    if (this.y > canvas.height + this.radius) this.y = -this.radius;
+                }
+
+                draw() {
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate(this.rotation);
+                    ctx.strokeStyle = '#888888';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(this.vertices[0].x, this.vertices[0].y);
+                    for (let i = 1; i < this.vertices.length; i++) {
+                        ctx.lineTo(this.vertices[i].x, this.vertices[i].y);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                split() {
+                    if (this.size === 'large') {
+                        return [
+                            new Asteroid(this.x, this.y, 'medium'),
+                            new Asteroid(this.x, this.y, 'medium')
+                        ];
+                    } else if (this.size === 'medium') {
+                        return [
+                            new Asteroid(this.x, this.y, 'small'),
+                            new Asteroid(this.x, this.y, 'small')
+                        ];
+                    }
+                    return [];
+                }
+            }
+
+            // Particle effect
+            class Particle {
+                constructor(x, y) {
+                    this.x = x;
+                    this.y = y;
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = Math.random() * 3;
+                    this.velocityX = Math.cos(angle) * speed;
+                    this.velocityY = Math.sin(angle) * speed;
+                    this.life = 30;
+                    this.maxLife = 30;
+                }
+
+                update() {
+                    this.x += this.velocityX;
+                    this.y += this.velocityY;
+                    this.life--;
+                }
+
+                draw() {
+                    const alpha = this.life / this.maxLife;
+                    ctx.fillStyle = `rgba(255, ${100 + Math.random() * 100}, 0, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                isDead() {
+                    return this.life <= 0;
+                }
+            }
+
+            // Game objects
+            let hamster = new Hamster();
+            let asteroids = [];
+            let fireballs = [];
+            let particles = [];
+
+            // Initialize asteroids for level
+            function initLevel() {
+                asteroids = [];
+                const numAsteroids = 3 + level;
+                for (let i = 0; i < numAsteroids; i++) {
+                    let asteroid;
+                    do {
+                        asteroid = new Asteroid();
+                    } while (distance(hamster.x, hamster.y, asteroid.x, asteroid.y) < 150);
+                    asteroids.push(asteroid);
+                }
+            }
+
+            // Distance helper
+            function distance(x1, y1, x2, y2) {
+                return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+            }
+
+            // Collision detection
+            function checkCollision(obj1, obj2, radius1, radius2) {
+                return distance(obj1.x, obj1.y, obj2.x, obj2.y) < radius1 + radius2;
+            }
+
+            // Shoot fireball from hamster's mouth
+            let lastShot = 0;
+            function shootFireball() {
+                const now = Date.now();
+                if (now - lastShot > 250) {
+                    const mouthPos = hamster.getMouthPosition();
+                    fireballs.push(new Fireball(mouthPos.x, mouthPos.y, hamster.angle));
+                    lastShot = now;
+                }
+            }
+
+            // Create explosion particles
+            function createExplosion(x, y, count = 15) {
+                for (let i = 0; i < count; i++) {
+                    particles.push(new Particle(x, y));
+                }
+            }
+
+            // Update UI
+            function updateUI() {
+                document.getElementById('score').textContent = score;
+                document.getElementById('lives').textContent = lives;
+                document.getElementById('level').textContent = level;
+            }
+
+            // Game over
+            function gameOver() {
+                gameRunning = false;
+                document.getElementById('finalScore').textContent = score;
+                document.getElementById('finalLevel').textContent = level;
+                document.getElementById('gameOver').style.display = 'block';
+            }
+
+            // Restart game
+            window.restartGame = function() {
+                score = 0;
+                lives = 3;
+                level = 1;
+                gameRunning = true;
+                hamster = new Hamster();
+                fireballs = [];
+                particles = [];
+                initLevel();
+                updateUI();
+                document.getElementById('gameOver').style.display = 'none';
+            };
+
+            // Game loop
+            function gameLoop() {
+                // Clear canvas
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw stars
+                ctx.fillStyle = '#ffffff';
+                stars.forEach(star => {
+                    ctx.fillRect(star.x, star.y, star.size, star.size);
+                });
+
+                if (gameRunning) {
+                    // Update hamster
+                    hamster.update();
+
+                    // Update fireballs
+                    fireballs = fireballs.filter(fireball => {
+                        fireball.update();
+                        return !fireball.isDead();
+                    });
+
+                    // Update asteroids
+                    asteroids.forEach(asteroid => asteroid.update());
+
+                    // Update particles
+                    particles = particles.filter(particle => {
+                        particle.update();
+                        return !particle.isDead();
+                    });
+
+                    // Check fireball-asteroid collisions
+                    for (let i = fireballs.length - 1; i >= 0; i--) {
+                        for (let j = asteroids.length - 1; j >= 0; j--) {
+                            if (checkCollision(fireballs[i], asteroids[j], fireballs[i].size, asteroids[j].radius)) {
+                                score += asteroids[j].points;
+                                createExplosion(asteroids[j].x, asteroids[j].y, 20);
+                                
+                                const newAsteroids = asteroids[j].split();
+                                asteroids.splice(j, 1);
+                                asteroids.push(...newAsteroids);
+                                
+                                fireballs.splice(i, 1);
+                                updateUI();
+                                break;
+                            }
+                        }
+                    }
+
+                    // Check hamster-asteroid collisions
+                    if (!hamster.invulnerable) {
+                        for (let i = asteroids.length - 1; i >= 0; i--) {
+                            if (checkCollision(hamster, asteroids[i], hamster.getCollisionRadius(), asteroids[i].radius)) {
+                                lives--;
+                                createExplosion(hamster.x, hamster.y, 30);
+                                updateUI();
+                                
+                                if (lives <= 0) {
+                                    gameOver();
+                                } else {
+                                    hamster.reset();
+                                }
+                                break;
+                            }
+                        }
+                    }
+
+                    // Level complete?
+                    if (asteroids.length === 0) {
+                        level++;
+                        hamster.reset();
+                        fireballs = [];
+                        initLevel();
+                        updateUI();
+                    }
+
+                    // Draw everything
+                    asteroids.forEach(asteroid => asteroid.draw());
+                    fireballs.forEach(fireball => fireball.draw());
+                    particles.forEach(particle => particle.draw());
+                    hamster.draw(); // Draw hamster last so it's on top
+                }
+
+                requestAnimationFrame(gameLoop);
+            }
+
+            // Keyboard controls
+            window.addEventListener('keydown', (e) => {
+                keys[e.key] = true;
+                if (e.key === ' ' && gameRunning) {
+                    e.preventDefault();
+                    shootFireball();
+                }
+            });
+
+            window.addEventListener('keyup', (e) => {
+                keys[e.key] = false;
+            });
+
+            // Start game
+            initLevel();
+            updateUI();
+            gameLoop();
+        }
+    </script>
+</body>
+</html>

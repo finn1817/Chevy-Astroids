@@ -341,14 +341,19 @@
                 }
 
                 getCollisionRadius() {
-                    return this.size * 0.6;
+                    // Slightly smaller hitbox so near-misses don't count as hits
+                    return this.size * 0.45;
                 }
 
                 getMouthPosition() {
-                    // Calculate mouth position at the front of hamster
+                    // Calculate mouth position using local (forward, down) offsets
+                    // forward: distance from center to nose along facing direction
+                    // down: offset below center line (positive = toward hamster's belly)
+                    const forward = this.size * 0.85;
+                    const down = this.size * 0.25;
                     return {
-                        x: this.x + Math.cos(this.angle) * this.size * 0.8,
-                        y: this.y + Math.sin(this.angle) * this.size * 0.8
+                        x: this.x + Math.cos(this.angle) * forward - Math.sin(this.angle) * down,
+                        y: this.y + Math.sin(this.angle) * forward + Math.cos(this.angle) * down
                     };
                 }
             }
